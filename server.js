@@ -1,35 +1,47 @@
 import { ApolloServer, gql } from 'apollo-server'
-
-const books = [
-  {
-    title: 'Harry potter and the chambers of secrets',
-    author: 'J.K. Rowling',
-  },
-  {
-    title: 'Jurassic Park',
-    author: 'Michael Crichton'
-  }
-]
+import mongoose from 'mongoose'
 
 const typeDefs = gql`
-  # Comments in GraphQL
-  type Book {
-    title: String,
-    author: String
+  type User {
+    _id: String!
+    username: String!
+    firstName: String!
+    lastName: String!
   }
   
   type Query {
-    books: [Book]
+    allUsers: [User!]!
+  }
+  
+  type Mutation {
+    createUser(userName: String!, firstName: String, lastName: String!): User!
   }
 `
 
+mongoose.connect('mongodb://localhost/test');
+
+const User = mongoose.model('users', { username: String, firstName: String, lastName: String})
+
 const resolvers = {
   Query: {
-    books: () => books
+    allUsers: async (parent, args, { User }) => {
+      const users = await User.find()
+      return users.map(u => {
+        u._id = u._id.toString()
+        return u;
+      })
+    }
+  },
+  Mutation: {
+    createUser: async (parent, args, { User }) => {
+      const usr = await new User(args).save()
+      usr._id = usr._id.toString()
+      return usr;
+    }
   }
 }
 
-const server = new ApolloServer({typeDefs, resolvers})
+const server = new ApolloServer({typeDefs, resolvers, context: { User }})
 
 server.listen().then(({url}) => {
   console.log(`Server ready at ${url}`)
