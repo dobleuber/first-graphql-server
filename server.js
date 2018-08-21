@@ -1,31 +1,35 @@
 import { ApolloServer, gql } from 'apollo-server'
 
-const books = [
-  {
-    title: 'Harry potter and the chambers of secrets',
-    author: 'J.K. Rowling',
-  },
-  {
-    title: 'Jurassic Park',
-    author: 'Michael Crichton'
-  }
-]
+import PokemonApi from './PokemonApi';
 
 const typeDefs = gql`
   # Comments in GraphQL
-  type Book {
-    title: String,
-    author: String
+  type Pokemon {
+      name: String,
+      abilities: [Ability]
+  }
+  
+  type Ability {
+      name: String,
+      url: String,      
   }
   
   type Query {
-    books: [Book]
+      getPokemonList: [Pokemon],
+      getPokemon(id: Int): Pokemon
   }
 `
 
+const pokemonApi = new PokemonApi()
+
 const resolvers = {
   Query: {
-    books: () => books
+    getPokemonList: async (_source) => {
+      return pokemonApi.getPokemon()
+    },
+    getPokemon: async (_source, { id }) => {
+      return pokemonApi.getPokemon(id)
+    }
   }
 }
 
